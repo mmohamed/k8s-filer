@@ -1,0 +1,106 @@
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myfiler
+  namespace: filer
+  labels:
+    app: myfiler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myfiler
+  template:
+    metadata:
+      labels:
+        app: myfiler
+    spec:
+      containers:
+        - name: myfiler
+          image: medinvention/k8s-filer:dev
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 4Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data-volume
+              mountPath: "/var/data"
+          env:
+            - name: UPLOAD_FOLDER
+              value: /var/data
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: myfiler-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myfiler-svc
+  namespace: filer
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  selector:
+    app: myfiler
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myfiler-pvc
+  namespace: filer
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  name: myfiler-ing
+  namespace: filer
+  labels:
+    app: myfiler
+spec:
+  rules:
+    - host: myfiler.medinvention.dev
+      http:
+        paths:
+          - backend:
+              serviceName: myfiler-svc
+              servicePort: http
+            path: /
+  tls:
+    - hosts:
+        - myfiler.medinvention.dev
+      secretName: myfiler-tls
+
+
+# curl https://myfiler.medinvention.dev/filer/list
+# curl -X POST -F file=@myfile https://myfiler.medinvention.dev/filer
+# curl -X GET https://myfiler.medinvention.dev/filer-list
+# curl -o getfile https://myfiler.medinvention.dev/filer/myfile
+# curl -X DELETE https://myfiler.medinvention.dev/filer/myfile

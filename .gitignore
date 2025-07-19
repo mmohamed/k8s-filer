@@ -1,0 +1,4 @@
+getfile
+myfile
+/uploads/*
+!/uploads/.gitkeep
