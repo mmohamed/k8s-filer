@@ -108,7 +108,6 @@ spec:
       secretName: myfiler-tls
 
 
-# curl https://myfiler.medinvention.dev/filer/list
 # curl -X POST -F file=@myfile https://myfiler.medinvention.dev/filer
 # curl -X GET https://myfiler.medinvention.dev/filer-list
 # curl -o getfile https://myfiler.medinvention.dev/filer/myfile
