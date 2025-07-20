@@ -38,10 +38,19 @@ spec:
           env:
             - name: UPLOAD_FOLDER
               value: /var/data
+          securityContext:
+            capabilities:
+              drop: ["ALL"]
+            allowPrivilegeEscalation: false
       volumes:
         - name: data-volume
           persistentVolumeClaim:
             claimName: myfiler-pvc
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+
 
 ---
 apiVersion: v1
